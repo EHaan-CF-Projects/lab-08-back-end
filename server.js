@@ -91,7 +91,7 @@ function lookupLocation(query, handler) {
 }
 
 function lookupWeather(query, handler) {
-  const SQL = 'SELECT * FROM  weathers WHERE forecast=$1';
+  const SQL = 'SELECT * FROM weathers WHERE forecast=$1';
   const values = [query];
   return client.query(SQL, values)
     .then(data => {
@@ -175,16 +175,20 @@ function searchForWeather(query){
   return superagent.get(weatherUrl)
     .then(weatherData => {
       console.log('Weather retrieved from Google')
-      let dailyWeatherArray = weatherData.body.daily.data.map(forecast => new Daily(forecast));
-
-      let SQL = `INSERT INTO weathers
-            (forecast, time)
-            VALUES($1, $2)`;
+      let dailyWeather = weatherData.body.daily.data;
+      return dailyWeather.map(forecast => {
+        let dailyForecast = new Daily(forecast);
+        let SQL = `INSERT INTO weathers
+              (forecast, time)
+              VALUES($1, $2)`;
+        console.log(dailyForecast.forecast, dailyForecast.time)
       
-      return client.query(SQL, [daily.forcast, daily.time])
-        .then( () => {
-          return dailyWeatherArray;
-        })
+        return client.query(SQL, [dailyForecast.forecast, dailyForecast.time])
+          .then(() => {
+            console.log(dailyForecast)
+            return dailyForecast;
+          })
+      })
     })
     .catch(err => console.error(err));
 }
