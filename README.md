@@ -24,9 +24,11 @@ Start time: 6:12pm
 
 Finish time:
 
-Actual time needed to complete:
-<!-- Use this area to document the iterative changes made to your application as each feature is successfully implemented. Use time stamps. Here's an examples:
+##Actual time needed to complete:
 
 01-01-2001 4:59pm - Application now has a fully-functional express server, with a GET route for the location resource. -->
 
 ## Credits and Collaborations
+
+First hour Lorin drove, Evy Navigated.
+Second hour Evy drove, Lorin navigated.

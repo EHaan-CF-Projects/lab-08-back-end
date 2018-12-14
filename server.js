@@ -3,6 +3,7 @@
 const express = require('express');
 const cors = require('cors');
 const superagent = require('superagent');
+const pg = require('pg');
 
 // Env Variables
 
@@ -10,11 +11,19 @@ const PORT = process.env.PORT || 3000;
 
 require('dotenv').config();
 
+
 // Application
 
 const app = express();
 
 app.use(cors());
+
+// Postgres
+const client = new pg.Client(process.env.DATABASE_URL);
+client.connect();
+
+client.on('error', err => console.error(err));
+
 
 // Get API Data
 
@@ -25,10 +34,38 @@ app.get('/movies', getMovies);
 
 // handlers
 
-function getLocation(request, response){
-  return searchToLatLong(request.query.data) // 'Lynnwood, WA'
-    .then(locationData => {
-      response.send(locationData);
+function getLocation(req, res){
+  let lookupHandler = {
+    cacheHit : (data) => {
+      console.log('Location retrieved from database')
+      res.status(200).send(data.rows[0]);
+    },
+    cacheMiss : (query) => {
+      return searchForLocation(query)
+      .then(result => {
+        res.send(result);
+      })
+    }
+  }
+  lookupLocation(req.query.data, lookupHandler);
+
+  // return searchForLocation(request.query.data) // 'Lynnwood, WA'
+  //   .then(locationData => {
+  //     response.send(locationData);
+  //   })
+}
+
+// Database Lookup
+function lookupLocation(query, handler) {
+  const SQL = 'SELECT * FROM locations WHERE search_query=$1';
+  const values = [query];
+  return client.query(SQL, values)
+    .then(data => {
+      if (data.rowCount) {
+        handler.cacheHit(data);
+      }else{
+        handler.cacheMiss(query);
+      }
     })
 }
 
@@ -86,12 +123,20 @@ function Movies(movie){
 
 // Search for Resource
 
-function searchToLatLong(query){
+function searchForLocation(query){
   const mapUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GOOGLE_MAPS_API}`;
   return superagent.get(mapUrl)
     .then(geoData => {
-      const location = new Location(geoData.body.results[0]);
-      return location;
+      console.log('Location retrieved from Google')
+      let location = new Location(geoData.body.results[0]);
+      let SQL = `INSERT INTO locations
+            (search_query, formatted_query, latitude, longitude)
+            VALUES($1, $2, $3, $4)`;
+
+      return client.query(SQL, [query, location.formatted_query, location.latitude, location.longitude])
+        .then(() => {
+          return location;
+        })
     })
     .catch(err => console.error(err));
 }
