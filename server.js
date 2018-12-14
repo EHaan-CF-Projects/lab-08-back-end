@@ -29,30 +29,55 @@ client.on('error', err => console.error(err));
 
 app.get('/location', getLocation);
 app.get('/weather', getWeather);
-app.get('/yelp', getYelp);
 app.get('/movies', getMovies);
-
+app.get('/yelp', getYelp);
+console.log(getWeather)
 // handlers
 
 function getLocation(req, res){
   let lookupHandler = {
     cacheHit : (data) => {
-      console.log('Location retrieved from database')
+      console.log('Location retrieved from database');
       res.status(200).send(data.rows[0]);
     },
     cacheMiss : (query) => {
       return searchForLocation(query)
-      .then(result => {
-        res.send(result);
-      })
+        .then(result => {
+          res.send(result);
+        });
+    },
+  };
+  lookupLocation(req.query.data, lookupHandler);
+}
+
+function getWeather (req, res){
+  let lookupWeatherHandler = {
+    cachehit : (data) => {
+      console.log('Weather retrived from database');
+      res.status(200).send(data.rows[0]);
+    },
+    casheMiss : (query) => {
+      return searchForWeather(query)
+        .then(result => {
+          res.send(result);
+        });
     }
   }
-  lookupLocation(req.query.data, lookupHandler);
+  lookupWeather(req.query.data, lookupWeatherHandler);
+}
 
-  // return searchForLocation(request.query.data) // 'Lynnwood, WA'
-  //   .then(locationData => {
-  //     response.send(locationData);
-  //   })
+function getYelp(req, res){
+  return searchForYelp(req.query.data)
+    .then(searchForYelpData => {
+      res.send(searchForYelpData);
+    });
+}
+
+function getMovies(req, res){
+  return searchMovies(req.query.data)
+    .then(moviesData => {
+      res.send(moviesData);
+    });
 }
 
 // Database Lookup
@@ -66,29 +91,24 @@ function lookupLocation(query, handler) {
       }else{
         handler.cacheMiss(query);
       }
-    })
+    });
 }
 
-function getWeather (req, res){
-  return searchForWeather(req.query.data)
-    .then(weatherData => {
-      res.send(weatherData);
-    })
+function lookupWeather(query, handler) {
+  const SQL = 'SELECT * FROM weathers WHERE location_id=$1';
+  const values = [query];
+  console.log(values);
+  return client.query(SQL, values)
+    .then(data => {
+      if (data.rowCount) {
+        handler.cacheHit(data);
+      }else{
+        handler.cacheMiss(query);
+      }
+    });
 }
 
-function getYelp(req, res){
-  return searchForYelp(req.query.data)
-    .then(searchForYelpData => {
-      res.send(searchForYelpData);
-    })
-}
 
-function getMovies(req, res){
-  return searchMovies(req.query.data)
-    .then(moviesData => {
-      res.send(moviesData);
-    })
-}
 // Constructors
 
 function Location(location){
@@ -127,7 +147,7 @@ function searchForLocation(query){
   const mapUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GOOGLE_MAPS_API}`;
   return superagent.get(mapUrl)
     .then(geoData => {
-      console.log('Location retrieved from Google')
+      console.log('Location retrieved from Google');
       let location = new Location(geoData.body.results[0]);
       let SQL = `INSERT INTO locations
             (search_query, formatted_query, latitude, longitude)
@@ -136,7 +156,7 @@ function searchForLocation(query){
       return client.query(SQL, [query, location.formatted_query, location.latitude, location.longitude])
         .then(() => {
           return location;
-        })
+        });
     })
     .catch(err => console.error(err));
 }
@@ -146,8 +166,16 @@ function searchForWeather(query){
   const weatherUrl = `https://api.darksky.net/forecast/${process.env.DARK_SKY_API}/${query.latitude},${query.longitude}`;
   return superagent.get(weatherUrl)
     .then(weatherData => {
+      console.log('Weather retrieved from Google');
       let dailyWeatherArray = weatherData.body.daily.data.map(forecast => new Daily(forecast));
-      return dailyWeatherArray;
+      let SQL = `INSERT INTO weathers
+            (forcast, time)
+            VALUES($1, $2)`;
+
+      return client.query(SQL, [dailyWeatherArray[0].forecast, dailyWeatherArray[0].time])
+        .then(() => {
+          return dailyWeatherArray;
+        });
     })
     .catch(err => console.error(err));
 }
@@ -157,7 +185,7 @@ function searchForYelp(query){
   return superagent.get(yelpUrl)
     .set('Authorization', `Bearer ${process.env.YELP_API}`)
     .then(searchForYelpData => {
-      return searchForYelpData.body.businesses.map(business => new Yelp(business))
+      return searchForYelpData.body.businesses.map(business => new Yelp(business));
     })
     .catch(err => console.error(err));
 }
@@ -166,7 +194,7 @@ function searchMovies(query){
   const moviesUrl = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIES_DB_API}&query=${query.short_name}`;
   return superagent.get(moviesUrl)
     .then(searchMoviesData => {
-      return searchMoviesData.body.results.map(movie => new Movies(movie))
+      return searchMoviesData.body.results.map(movie => new Movies(movie));
     })
     .catch(err => console.error(err));
 }
@@ -174,8 +202,8 @@ function searchMovies(query){
 // Error messages
 app.get('/*', function(req, res){
   res.status(404).send('you are in the wrong place');
-})
+});
 
 app.listen(PORT, () => {
   console.log(`app is running on port: ${PORT}`);
-})
+});

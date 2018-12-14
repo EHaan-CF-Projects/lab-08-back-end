@@ -32,3 +32,4 @@ Finish time:
 
 First hour Lorin drove, Evy Navigated.
 Second hour Evy drove, Lorin navigated.
+Third hour Lorin drove, Evy navigated
