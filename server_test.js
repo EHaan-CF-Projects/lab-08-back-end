@@ -8,13 +8,13 @@ const pg = require('pg');
 // Env Variables
 
 const PORT = process.env.PORT || 3000;
-
 require('dotenv').config();
 
 // Application
 
 const app = express();
 app.use(cors());
+
 
 // Postgres
 const client = new pg.Client(process.env.DATABASE_URL);
