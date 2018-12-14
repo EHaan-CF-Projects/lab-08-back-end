@@ -87,7 +87,7 @@ function Movies(movie){
 // Search for Resource
 
 function searchToLatLong(query){
-  const mapUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.Google_Maps_API}`;
+  const mapUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GOOGLE_MAPS_API}`;
   return superagent.get(mapUrl)
     .then(geoData => {
       const location = new Location(geoData.body.results[0]);
@@ -98,7 +98,7 @@ function searchToLatLong(query){
 
 function searchForWeather(query){
   // console.log(query)
-  const weatherUrl = `https://api.darksky.net/forecast/${process.env.Dark_Sky_API}/${query.latitude},${query.longitude}`;
+  const weatherUrl = `https://api.darksky.net/forecast/${process.env.DARK_SKY_API}/${query.latitude},${query.longitude}`;
   return superagent.get(weatherUrl)
     .then(weatherData => {
       let dailyWeatherArray = weatherData.body.daily.data.map(forecast => new Daily(forecast));
@@ -110,7 +110,7 @@ function searchForWeather(query){
 function searchForYelp(query){
   const yelpUrl = `https://api.yelp.com/v3/businesses/search?term=restaurants&latitude=${query.latitude}&longitude=${query.longitude}`;
   return superagent.get(yelpUrl)
-    .set('Authorization', `Bearer ${process.env.Yelp_ApI}`)
+    .set('Authorization', `Bearer ${process.env.YELP_API}`)
     .then(searchForYelpData => {
       return searchForYelpData.body.businesses.map(business => new Yelp(business))
     })
@@ -118,7 +118,7 @@ function searchForYelp(query){
 }
 
 function searchMovies(query){
-  const moviesUrl = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.Movies_Db_API}&query=${query.short_name}`;
+  const moviesUrl = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIES_DB_API}&query=${query.short_name}`;
   return superagent.get(moviesUrl)
     .then(searchMoviesData => {
       return searchMoviesData.body.results.map(movie => new Movies(movie))

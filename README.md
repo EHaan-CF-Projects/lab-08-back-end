@@ -16,6 +16,15 @@ City Explorer helps users get to know locations they are visiting
 JavaScript, various APIs, SQL
 
 ## Change Log
+Number and name of feature: Feature 1: Caching data
+
+Estimate of time needed to complete: 3 hours
+
+Start time: 6:12pm
+
+Finish time:
+
+Actual time needed to complete:
 <!-- Use this area to document the iterative changes made to your application as each feature is successfully implemented. Use time stamps. Here's an examples:
 
 01-01-2001 4:59pm - Application now has a fully-functional express server, with a GET route for the location resource. -->
