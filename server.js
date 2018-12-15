@@ -91,8 +91,8 @@ function lookupLocation(query, handler) {
 }
 
 function lookupWeather(query, handler) {
-  const SQL = 'SELECT * FROM weathers WHERE forecast=$1';
-  const values = [query];
+  const SQL = 'SELECT * FROM weathers WHERE location_id=$1';
+  const values = [parseInt(query.id)];
   return client.query(SQL, values)
     .then(data => {
       if (data.rowCount) {
@@ -179,13 +179,14 @@ function searchForWeather(query){
       return dailyWeather.map(forecast => {
         let dailyForecast = new Daily(forecast);
         let SQL = `INSERT INTO weathers
-              (forecast, time)
-              VALUES($1, $2)`;
-        console.log(dailyForecast.forecast, dailyForecast.time)
-      
-        return client.query(SQL, [dailyForecast.forecast, dailyForecast.time])
+              (forecast, time, location_id)
+              VALUES($1, $2, $3)`;
+              console.log(query.id)
+        // console.log(dailyForecast.forecast, dailyForecast.time)
+        return client.query(SQL, [dailyForecast.forecast, dailyForecast.time, parseInt(query.id)])
           .then(() => {
-            console.log(dailyForecast)
+            // console.log(dailyForecast)
+            console.log(parseInt(query.id));
             return dailyForecast;
           })
       })
