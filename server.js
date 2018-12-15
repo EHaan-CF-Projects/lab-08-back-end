@@ -179,9 +179,8 @@ function searchForWeather(query){
       return dailyWeather.map(forecast => {
         let dailyForecast = new Daily(forecast);
         let SQL = `INSERT INTO weathers
-              (forecast, time, location_id)
-              VALUES($1, $2, $3)`;
-              console.log(query.id)
+        (forecast, time, location_id)
+        VALUES($1, $2, $3)`;
         // console.log(dailyForecast.forecast, dailyForecast.time)
         return client.query(SQL, [dailyForecast.forecast, dailyForecast.time, parseInt(query.id)])
           .then(() => {
