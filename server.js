@@ -55,6 +55,27 @@ function getLocation(req, res){
   //   })
 }
 
+function getWeather (req, res){
+  let lookupWeatherHandler = {
+    cacheHit : (data) => {
+      console.log('weather retrieved from database')
+      res.status(200).send(data.rows[0]);
+    },
+    cacheMiss : (query) => {
+      return searchForWeather(query)
+      .then(result => {
+        res.send(result);
+      })
+    }
+  }
+  lookupWeather(req.query.data, lookupWeatherHandler);
+  // return searchForWeather(req.query.data)
+  //   .then(weatherData => {
+  //     res.send(weatherData);
+  //   })
+}
+
+
 // Database Lookup
 function lookupLocation(query, handler) {
   const SQL = 'SELECT * FROM locations WHERE search_query=$1';
@@ -69,12 +90,19 @@ function lookupLocation(query, handler) {
     })
 }
 
-function getWeather (req, res){
-  return searchForWeather(req.query.data)
-    .then(weatherData => {
-      res.send(weatherData);
+function lookupWeather(query, handler) {
+  const SQL = 'SELECT * FROM weathers WHERE location_id=$1';
+  const values = [parseInt(query.id)];
+  return client.query(SQL, values)
+    .then(data => {
+      if (data.rowCount) {
+        handler.cacheHit(data);
+      }else{
+        handler.cacheMiss(query);
+      }
     })
 }
+
 
 function getYelp(req, res){
   return searchForYelp(req.query.data)
@@ -142,12 +170,24 @@ function searchForLocation(query){
 }
 
 function searchForWeather(query){
-  // console.log(query)
   const weatherUrl = `https://api.darksky.net/forecast/${process.env.DARK_SKY_API}/${query.latitude},${query.longitude}`;
   return superagent.get(weatherUrl)
     .then(weatherData => {
-      let dailyWeatherArray = weatherData.body.daily.data.map(forecast => new Daily(forecast));
-      return dailyWeatherArray;
+      console.log('Weather retrieved from Google')
+      let dailyWeather = weatherData.body.daily.data;
+      return dailyWeather.map(forecast => {
+        let dailyForecast = new Daily(forecast);
+        let SQL = `INSERT INTO weathers
+        (forecast, time, location_id)
+        VALUES($1, $2, $3)`;
+        // console.log(dailyForecast.forecast, dailyForecast.time)
+        return client.query(SQL, [dailyForecast.forecast, dailyForecast.time, parseInt(query.id)])
+          .then(() => {
+            // console.log(dailyForecast)
+            // console.log(parseInt(query.id));
+            return dailyForecast;
+          })
+      })
     })
     .catch(err => console.error(err));
 }
