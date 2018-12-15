@@ -170,7 +170,6 @@ function searchForLocation(query){
 }
 
 function searchForWeather(query){
-  // console.log(query)
   const weatherUrl = `https://api.darksky.net/forecast/${process.env.DARK_SKY_API}/${query.latitude},${query.longitude}`;
   return superagent.get(weatherUrl)
     .then(weatherData => {
@@ -185,7 +184,7 @@ function searchForWeather(query){
         return client.query(SQL, [dailyForecast.forecast, dailyForecast.time, parseInt(query.id)])
           .then(() => {
             // console.log(dailyForecast)
-            console.log(parseInt(query.id));
+            // console.log(parseInt(query.id));
             return dailyForecast;
           })
       })
