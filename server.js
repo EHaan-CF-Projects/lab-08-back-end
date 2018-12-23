@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 
 //Database Setup
-const client = new pg.Client(process.env.DATABASE_URL);
+const client = new pg.Client(process.env.HEROKU_POSTGRESQL_PURPLE_URL || process.env.DATABASE_URL);
 client.connect();
 client.on('error', err => console.error(err));
 
